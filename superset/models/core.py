@@ -84,6 +84,7 @@ config = app.config
 custom_password_store = config["SQLALCHEMY_CUSTOM_PASSWORD_STORE"]
 stats_logger = config["STATS_LOGGER"]
 log_query = config["QUERY_LOGGER"]
+log_query_data = config["QUERY_DATA_LOGGER"] if "QUERY_DATA_LOGGER" in config else None
 metadata = Model.metadata  # pylint: disable=no-member
 logger = logging.getLogger(__name__)
 
@@ -663,6 +664,21 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):  # pylint: disable
                     security_manager,
                 )
 
+        def _log_query_data(query: list | str | None, df) -> None:
+            if log_query_data:
+                try:
+                    log_query_data(                        
+                        engine_url,
+                        query,
+                        df,
+                        schema,
+                        __name__,
+                        security_manager,
+                    )
+                except Exception as ex:
+                    logger.error("Error logging query data", exc_info=1)
+
+
         with self.get_raw_connection(catalog=catalog, schema=schema) as conn:
             cursor = conn.cursor()
             df = None
@@ -687,6 +703,8 @@ class Database(Model, AuditMixinNullable, ImportExportMixin):  # pylint: disable
                         df = result_set.to_pandas_df()
             if mutator:
                 df = mutator(df)
+
+            _log_query_data(sqls, df)
 
             return self.post_process_df(df)
 

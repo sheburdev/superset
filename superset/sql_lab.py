@@ -76,6 +76,7 @@ SQLLAB_HARD_TIMEOUT = SQLLAB_TIMEOUT + 60
 SQL_MAX_ROW = config["SQL_MAX_ROW"]
 SQLLAB_CTAS_NO_LIMIT = config["SQLLAB_CTAS_NO_LIMIT"]
 log_query = config["QUERY_LOGGER"]
+log_query_data = config["QUERY_DATA_LOGGER"] if "QUERY_DATA_LOGGER" in config else None
 logger = logging.getLogger(__name__)
 
 
@@ -330,7 +331,21 @@ def execute_sql_statement(  # pylint: disable=too-many-statements
 
     logger.debug("Query %d: Fetching cursor description", query.id)
     cursor_description = cursor.description
-    return SupersetResultSet(data, cursor_description, db_engine_spec)
+
+    result_set = SupersetResultSet(data, cursor_description, db_engine_spec)
+    
+    if log_query_data:
+        log_query_data(
+            query.database.sqlalchemy_uri,
+            query.executed_sql,
+            result_set.to_pandas_df(),
+            query.schema,
+            __name__,
+            security_manager,
+            log_params,
+        )
+
+    return result_set
 
 
 def apply_limit_if_exists(

@@ -926,6 +926,20 @@ BACKUP_COUNT = 30
 #     pass
 QUERY_LOGGER = None
 
+# Custom logger for auditing queries data. This can be used to log what information was queried and returned
+# to users. The function is called for every query ran, in both SQL Lab and charts/dashboards.
+# def QUERY_DATA_LOGGER(
+#     database,
+#     query,
+#     dataFrame,
+#     schema=None,
+#     client=None,
+#     security_manager=None,
+#     log_params=None,
+# ):
+#     pass
+QUERY_DATA_LOGGER = None
+
 # Set this API key to enable Mapbox visualizations
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
